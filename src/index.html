@@ -352,20 +352,23 @@
       onComplete() {
         this.clearTimer();
         this.isRunning = false;
-        this.timeLeft = 0;
-        this.updateDisplay();
-        this.updateWaterLevel();
 
         if (this.currentMode === 'pomodoro') {
           this.sessionsCompleted += 1;
           this.sessionCounterEl.textContent = `Sessions completed: ${this.sessionsCompleted}`;
+          if (this.sessionsCompleted > 0 && this.sessionsCompleted % 4 === 0) {
+            this.switchMode('long');
+          } else {
+            this.switchMode('short');
+          }
+        } else {
+          if (this.currentMode === 'long') {
+            this.sessionsCompleted = 0;
+            this.sessionCounterEl.textContent = `Sessions completed: 0`;
+          }
+          this.switchMode('pomodoro');
         }
-
-        // Auto-switch suggestion (commented to preserve existing behavior)
-        // this.switchMode(this.currentMode === 'pomodoro' ? 'short' : 'pomodoro');
-
-        this.startBtn.disabled = false;
-        this.pauseBtn.disabled = true;
+        this.start();
       }
 
       updateDisplay() {
