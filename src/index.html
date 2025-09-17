@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pomme-doro</title>
+  <style>
+    /* Reset */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* Pomegranate theme background */
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 70% 10%, #6c2831 0%, #3a1319 45%, #1b0a0d 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      color: #fff;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      padding: 20px;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    /* Glass jar */
+    .glass-container {
+      position: relative;
+      width: 280px;
+      height: 400px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 20px 20px 40px 40px;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      box-shadow:
+        0 16px 40px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+    }
+
+    /* Water fill (pomegranate juice) */
+    .water {
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 0%;
+      background:
+        linear-gradient(0deg,
+          rgba(192, 57, 43, 0.95) 0%,
+          rgba(201, 76, 67, 0.92) 45%,
+          rgba(231, 106, 92, 0.90) 100%);
+      transition: height 0.9s cubic-bezier(.22,.61,.36,1);
+      border-radius: 0 0 38px 38px;
+      will-change: height;
+    }
+
+    /* Seamless tiled SVG wave (clean, continuous) */
+    .wave, .wave2 {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -14px; /* sit slightly above the water surface for a crisp crest */
+      height: 28px;
+      background-repeat: repeat-x;
+      background-size: 280px 28px; /* tile width must match animation distance */
+      pointer-events: none;
+      will-change: background-position;
+    }
+
+    /* Primary wave (lighter foam) */
+    .wave {
+      background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='280' height='28' viewBox='0 0 280 28'>\
+<path d='M0,14 Q35,2 70,14 T140,14 T210,14 T280,14 V28 H0 Z' fill='rgba(255,255,255,0.25)'/>\
+</svg>");
+      animation: wave-scroll 6s linear infinite;
+      filter: drop-shadow(0 1px 0 rgba(255,255,255,0.15));
+    }
+
+    /* Secondary wave (deeper tone, slower for parallax) */
+    .wave2 {
+      top: -10px;
+      background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='280' height='28' viewBox='0 0 280 28'>\
+<path d='M0,14 Q35,8 70,14 T140,14 T210,14 T280,14 V28 H0 Z' fill='rgba(255,255,255,0.14)'/>\
+</svg>");
+      animation: wave-scroll 12s linear infinite;
+    }
+
+    /* Continuous horizontal scroll to ensure no directional jitter */
+    @keyframes wave-scroll {
+      from { background-position-x: 0; }
+      to   { background-position-x: 280px; }
+    }
+
+    .timer-display {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      font-size: 3rem;
+      font-weight: 800;
+      text-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+      letter-spacing: 0.5px;
+      z-index: 10;
+    }
+
+    .status {
+      text-align: center;
+      color: rgba(255,255,255,0.95);
+      font-size: 1.15rem;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    }
+
+    .session-counter {
+      color: rgba(255,255,255,0.85);
+      font-size: 0.98rem;
+      text-align: center;
+    }
+
+    /* Mode selector pills */
+    .mode-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .mode-btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      font-size: 0.9rem;
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(6px);
+    }
+
+    .mode-btn:hover { transform: translateY(-1px); }
+
+    .mode-btn.active {
+      background: rgba(255, 255, 255, 0.28);
+      border-color: rgba(255,255,255,0.28);
+      transform: translateY(-1px) scale(1.03);
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 14px 22px;
+      border: none;
+      border-radius: 999px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.25s ease, opacity 0.2s ease;
+      color: #fff;
+      min-width: 120px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    /* Primary: pomegranate */
+    .btn-primary {
+      background: linear-gradient(135deg, #c0392b 0%, #8f2b22 100%);
+      box-shadow: 0 10px 24px rgba(192, 57, 43, 0.38);
+    }
+
+    /* Secondary: darker pomegranate */
+    .btn-secondary {
+      background: linear-gradient(135deg, #8f2b22 0%, #6c201a 100%);
+      box-shadow: 0 10px 24px rgba(108, 40, 49, 0.35);
+    }
+
+    /* Tertiary: bright accent within theme */
+    .btn-tertiary {
+      background: linear-gradient(135deg, #e36a5d 0%, #c84d42 100%);
+      box-shadow: 0 10px 24px rgba(227, 106, 93, 0.35);
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    @media (max-width: 480px) {
+      .container { padding: 16px; gap: 20px; }
+      .glass-container { width: 250px; height: 350px; }
+      .timer-display { font-size: 2.5rem; }
+      .btn { padding: 12px 18px; font-size: 1rem; min-width: 104px; }
+    }
+
+    @media (max-height: 700px) {
+      .glass-container { height: 320px; }
+      .timer-display { font-size: 2.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="pomodoro">Pomodoro</button>
+      <button class="mode-btn" data-mode="short">Short Break</button>
+      <button class="mode-btn" data-mode="long">Long Break</button>
+    </div>
+
+    <div class="status" id="status">Ready to Focus</div>
+
+    <div class="glass-container">
+      <div class="water" id="water">
+        <div class="wave"></div>
+        <div class="wave2"></div>
+      </div>
+      <div class="timer-display" id="timer">25:00</div>
+    </div>
+
+    <div class="session-counter" id="sessionCounter">Sessions completed: 0</div>
+
+    <div class="controls">
+      <button class="btn btn-primary" id="startBtn">Start</button>
+      <button class="btn btn-secondary" id="pauseBtn" disabled>Pause</button>
+      <button class="btn btn-tertiary" id="resetBtn">Reset</button>
+    </div>
+  </div>
+
+  <script>
+    class PomodoroTimer {
+      constructor() {
+        this.modes = { pomodoro: 25 * 60, short: 5 * 60, long: 15 * 60 };
+        this.currentMode = 'pomodoro';
+        this.timeLeft = this.modes[this.currentMode];
+        this.isRunning = false;
+        this.interval = null;
+        this.sessionsCompleted = 0;
+
+        this.initElements();
+        this.bindEvents();
+        this.updateDisplay();
+        this.updateWaterLevel();
+        this.updateStatus();
+      }
+
+      initElements() {
+        this.timerEl = document.getElementById('timer');
+        this.waterEl = document.getElementById('water');
+        this.statusEl = document.getElementById('status');
+        this.sessionCounterEl = document.getElementById('sessionCounter');
+        this.startBtn = document.getElementById('startBtn');
+        this.pauseBtn = document.getElementById('pauseBtn');
+        this.resetBtn = document.getElementById('resetBtn');
+        this.modeButtons = document.querySelectorAll('.mode-btn');
+      }
+
+      bindEvents() {
+        this.startBtn.addEventListener('click', () => this.start());
+        this.pauseBtn.addEventListener('click', () => this.pause());
+        this.resetBtn.addEventListener('click', () => this.reset());
+
+        this.modeButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const mode = btn.getAttribute('data-mode');
+            if (mode && mode !== this.currentMode) {
+              this.switchMode(mode);
+            }
+          });
+        });
+      }
+
+      switchMode(mode) {
+        this.clearTimer();
+        this.currentMode = mode;
+        this.timeLeft = this.modes[this.currentMode];
+        this.isRunning = false;
+
+        this.modeButtons.forEach(b => b.classList.toggle('active', b.getAttribute('data-mode') === mode));
+        this.startBtn.disabled = false;
+        this.pauseBtn.disabled = true;
+
+        this.updateStatus();
+        this.updateDisplay();
+        this.updateWaterLevel();
+      }
+
+      updateStatus() {
+        const labels = {
+          pomodoro: 'Ready to Focus',
+          short: 'Short Break',
+          long: 'Long Break'
+        };
+        this.statusEl.textContent = labels[this.currentMode] || 'Pomodoro';
+      }
+
+      start() {
+        if (this.isRunning) return;
+        this.isRunning = true;
+        this.startBtn.disabled = true;
+        this.pauseBtn.disabled = false;
+
+        const tick = () => {
+          if (!this.isRunning) return;
+          this.timeLeft -= 1;
+          this.updateDisplay();
+          this.updateWaterLevel();
+
+          if (this.timeLeft <= 0) {
+            this.onComplete();
+          }
+        };
+
+        this.interval = setInterval(tick, 1000);
+      }
+
+      pause() {
+        if (!this.isRunning) return;
+        this.isRunning = false;
+        this.startBtn.disabled = false;
+        this.pauseBtn.disabled = true;
+        this.clearTimer();
+      }
+
+      reset() {
+        this.clearTimer();
+        this.isRunning = false;
+        this.timeLeft = this.modes[this.currentMode];
+        this.updateDisplay();
+        this.updateWaterLevel();
+        this.startBtn.disabled = false;
+        this.pauseBtn.disabled = true;
+      }
+
+      onComplete() {
+        this.clearTimer();
+        this.isRunning = false;
+        this.timeLeft = 0;
+        this.updateDisplay();
+        this.updateWaterLevel();
+
+        if (this.currentMode === 'pomodoro') {
+          this.sessionsCompleted += 1;
+          this.sessionCounterEl.textContent = `Sessions completed: ${this.sessionsCompleted}`;
+        }
+
+        // Auto-switch suggestion (commented to preserve existing behavior)
+        // this.switchMode(this.currentMode === 'pomodoro' ? 'short' : 'pomodoro');
+
+        this.startBtn.disabled = false;
+        this.pauseBtn.disabled = true;
+      }
+
+      updateDisplay() {
+        const m = Math.floor(this.timeLeft / 60).toString().padStart(2, '0');
+        const s = (this.timeLeft % 60).toString().padStart(2, '0');
+        this.timerEl.textContent = `${m}:${s}`;
+      }
+
+      updateWaterLevel() {
+        const total = this.modes[this.currentMode];
+        const remaining = Math.max(0, Math.min(1, this.timeLeft / total));
+        const pct = remaining * 100;
+        this.waterEl.style.height = `${pct}%`;
+      }
+
+      clearTimer() {
+        if (this.interval) {
+          clearInterval(this.interval);
+          this.interval = null;
+        }
+      }
+    }
+
+    // Initialize
+    new PomodoroTimer();
+  </script>
+</body>
+</html>
